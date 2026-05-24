@@ -210,8 +210,8 @@ void DisplayController::init() {
     
     // Memory Access (Orientation)
     write_cmd(0x36); // MADCTL
-    // Set rotation 3 (Landscape inverted, pins on left)
-    write_data(0xE8); 
+    // ST7789 portrait orientation (MY=0, MX=1, MV=0, RGB=0) — 180° from 0x80
+    write_data(0x40); 
 
     write_cmd(0x3A); // COLMOD: Pixel Format Set
     write_data(0x55); // 16-bit color (RGB 565)
