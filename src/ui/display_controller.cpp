@@ -210,9 +210,11 @@ void DisplayController::init() {
     
     // Memory Access (Orientation)
     write_cmd(0x36); // MADCTL
-    // ST7789 portrait orientation (MY=0, MX=1, MV=0, RGB=0) — 180° from 0x80
+    // ST7789 portrait orientation (MY=0, MX=1, MV=0, RGB=0)
     write_data(0x40); 
 
+    write_cmd(0x21); // Display Inversion On (ST7789 panel needs this for correct colors)
+    
     write_cmd(0x3A); // COLMOD: Pixel Format Set
     write_data(0x55); // 16-bit color (RGB 565)
     
