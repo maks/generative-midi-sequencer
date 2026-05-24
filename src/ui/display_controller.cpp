@@ -2,6 +2,8 @@
 #include "pico/stdlib.h"
 #include "hardware/spi.h"
 #include "hardware/gpio.h"
+#include "hardware/pwm.h"
+#include "hardware/clocks.h"
 
 // --- Embedded 8x8 Bitmap Font (ASCII 32 to 127) ---
 // Each character is 8 bytes wide (1 byte per row)
@@ -111,6 +113,7 @@ DisplayController::DisplayController() {
     pin_sck  = 26; // Display SCK (DP7 -> GP26)
     pin_mosi = 27; // Display MOSI (DP6 -> GP27)
     pin_dc   = 21; // Display D/C (DP5 -> GP21)
+    pin_led  = 23; // Backlight PWM (channel B, 8-bit: 0-255)
 
     // Landscape Mode standard orientation
     width = 320;
@@ -150,8 +153,8 @@ void DisplayController::reset() {
 }
 
 void DisplayController::init() {
-    // 1. Initialize SPI1 at 48 MHz (maximum safe speed for ILI9341 on breadboard)
-    spi_init(spi1, 48000000);
+    // 1. Initialize SPI1 at 75 MHz (picoTracker spec: 75 MHz for display transfers)
+    spi_init(spi1, 75000000);
     
     // 2. Map SPI functions to GPIO pins
     gpio_set_function(pin_sck, GPIO_FUNC_SPI);
@@ -166,10 +169,20 @@ void DisplayController::init() {
     gpio_set_dir(pin_dc, GPIO_OUT);
     gpio_put(pin_dc, 1);
     
-    // GP16 is Display Reset
+    // GP22 is Display Reset
     gpio_init(pin_miso);
     gpio_set_dir(pin_miso, GPIO_OUT);
     gpio_put(pin_miso, 1);
+
+    // 3b. Initialize backlight PWM on GPIO 23 (channel B, 8-bit: 0-255)
+    gpio_init(pin_led);
+    gpio_set_function(pin_led, GPIO_FUNC_PWM);
+    uint slice_num = pwm_gpio_to_slice_num(pin_led);
+    pwm_config pwm_cfg = pwm_get_default_config();
+    pwm_config_set_clkdiv(&pwm_cfg, clock_get_hz(clk_sys) / 256.0f);
+    pwm_config_set_wrap(&pwm_cfg, 255);
+    pwm_init(slice_num, &pwm_cfg, true);
+    pwm_set_gpio_level(pin_led, 0); // Start at 0 brightness, caller sets via set_brightness()
 
     // 4. Trigger Display Reset
     reset();
@@ -317,4 +330,8 @@ void DisplayController::draw_text(uint16_t x, uint16_t y, const std::string& tex
         curr_x += 8 * scale; // Move cursor by font width
         if (curr_x >= width) break; // Screen clip
     }
+}
+
+void DisplayController::set_brightness(uint8_t brightness) {
+    pwm_set_gpio_level(pin_led, brightness);
 }

@@ -7,7 +7,7 @@
 #include <string.h>
 #include <cstdio>
 
-static constexpr uint32_t FLASH_SAVE_OFFSET = (16 * 1024 * 1024) - 4096;
+static constexpr uint32_t FLASH_SAVE_OFFSET = (1 * 1024 * 1024) - 4096; // 1MB W25Q080 flash
 
 StorageManager::StorageManager() {
     // Constructor

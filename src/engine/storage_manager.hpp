@@ -12,8 +12,8 @@ static_assert(sizeof(SaveData) <= 256, "SaveData exceeds one flash page size of 
 
 class StorageManager {
 private:
-    // We target the very last 4KB sector of the 16MB flash to avoid conflict with the code binary
-    static const uint32_t FLASH_TARGET_OFFSET = (16 * 1024 * 1024) - 4096; // 0xFFF000
+    // We target the very last 4KB sector of the 1MB W25Q080 flash to avoid conflict with the code binary
+    static const uint32_t FLASH_TARGET_OFFSET = (1 * 1024 * 1024) - 4096; // 0xFF000
     static const uint32_t MAGIC_SIGNATURE = 0x5345514D;
 
     uint32_t calculate_checksum(const TrackParams* params);

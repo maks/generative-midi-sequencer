@@ -19,10 +19,12 @@ target_link_libraries(generative_midi_sequencer
     pico_multicore      # Required for dual core
     hardware_uart       # Required for MIDI OUT (GP0/GP1)
     hardware_spi        # Required for Display (SPI1)
+    hardware_pwm        # Required for Display backlight (GPIO 23)
+    hardware_clocks     # Required for clock overclocking (220.5 MHz)
     hardware_timer      # Required for Clock / timing
     hardware_pio        # Required for hardware/pio.h
     pico_rand           # Required for pico/rand.h
-    tinyusb_device      # TinyUSB device stack (for USB MIDI)
+    tinyusb_device      # TinyUSB device stack (for USB MIDI + CDC)
     tinyusb_board
 )
 

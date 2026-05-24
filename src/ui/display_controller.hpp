@@ -23,6 +23,7 @@ private:
     uint8_t pin_sck;  // GP26 (SCK / DP7)
     uint8_t pin_mosi; // GP27 (MOSI / DP6)
     uint8_t pin_dc;   // GP21 (D/C / DP5)
+    uint8_t pin_led;  // GP23 (Backlight PWM, channel B)
     
     uint16_t width;
     uint16_t height;
@@ -38,10 +39,17 @@ public:
     DisplayController();
     
     /**
-     * Initializes the SPI0 peripheral at 48MHz (very high refresh rate)
-     * and sends the ILI9341 power/display configuration commands.
+     * Initializes the SPI1 peripheral at 75MHz and the backlight PWM (GPIO 23).
+     * Sends the ILI9341 power/display configuration commands.
      */
     void init();
+
+    /**
+     * Sets the display backlight brightness via PWM on GPIO 23.
+     * 
+     * @param brightness Brightness level 0 (off) to 255 (full).
+     */
+    void set_brightness(uint8_t brightness);
 
     /**
      * Resets the display via the hardware reset pin (GP16).
