@@ -874,20 +874,6 @@ uint32_t key_repeat_timers[KEY_COUNT] = {0};
 bool key_was_held[KEY_COUNT] = {false};
 
 int main() {
-    // ========================================================================
-    // Clock Configuration: Overclock to 220.5 MHz (per picoTracker reference)
-    // PLL_SYS:  VCO=882 MHz, PD1=4, PD2=1 → 220.5 MHz
-    // PLL_USB:  VCO=1536 MHz, PD1=4, PD2=4 → 96 MHz (for clk_peri)
-    // ========================================================================
-    {
-        // Configure PLL_SYS and clk_sys for 220.5 MHz (SDK 2.x: set_sys_clock_pll handles both)
-        set_sys_clock_pll(882000000, 4, 1);
-
-        // Configure clk_peri to use PLL_USB at 96 MHz
-        // clock_configure auto-initializes PLL_USB when used as a clock source
-        clock_configure(clk_peri, 0, CLOCKS_CLK_PERI_CTRL_AUXSRC_VALUE_CLKSRC_PLL_USB, 96000000, 96000000);
-    }
-
     stdio_init_all();
     sleep_ms(2000); // Settling delay for USB debug terminal
     // Initialize TinyUSB stack so we can detect USB mount state
