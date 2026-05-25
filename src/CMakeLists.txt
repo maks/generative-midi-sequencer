@@ -23,12 +23,13 @@ target_link_libraries(generative_midi_sequencer
     hardware_clocks     # Required for clock overclocking (220.5 MHz)
     hardware_timer      # Required for Clock / timing
     hardware_pio        # Required for hardware/pio.h
+    hardware_adc        # Required for hardware/adc.h (battery reading)
     pico_rand           # Required for pico/rand.h
     tinyusb_device      # TinyUSB device stack (for USB MIDI + CDC)
     tinyusb_board
 )
 
-# Enable USB stdio (for printf debugging) and disable UART stdio (GP0/GP1 is dedicated to MIDI)
+# Enable UART1 stdio for printf debugging (GP0/GP1 UART0 is dedicated to MIDI OUT)
 pico_enable_stdio_usb(generative_midi_sequencer 0)
 pico_enable_stdio_uart(generative_midi_sequencer 1)
 

@@ -8,6 +8,7 @@
 #include "hardware/pio.h"
 #include "hardware/clocks.h"
 #include "hardware/gpio.h"
+#include "hardware/adc.h"
 #include "hardware/sync.h"
 #include "engine/track.hpp"
 #include "engine/midi_handler.hpp"
@@ -22,6 +23,9 @@ extern "C" {
     void tud_task(void);
     bool tud_midi_n_mounted(uint8_t itf);
 }
+
+// Forward declaration for battery reading (defined later in file)
+static uint8_t read_battery_percentage();
 
 // --- IPC Shared Memory Structures ---
 
@@ -628,6 +632,13 @@ void update_ui_dashboard(float cur_x, float cur_y, float cur_w, float cur_h) {
         
         draw_bitmap(291, 16 + disk_y_offset, 16, 16, icon_save_16x16, disk_icon_fg, disk_bg);
 
+        // Battery level indicator (thick horizontal bar, above save icon)
+        uint8_t batt_pct = read_battery_percentage();
+        int batt_width = (batt_pct * 20) / 100;
+        uint16_t batt_color = (batt_pct < 30) ? COLOR_RED : (batt_pct < 60) ? COLOR_YELLOW : COLOR_GREEN;
+        display.fill_rect(270, 7, 20, 2, COLOR_DARK_GREY); // Track
+        if (batt_width > 0) display.fill_rect(270, 7, batt_width, 2, batt_color); // Fill
+
         // Divider
         display.fill_rect(0, 47, 320, 1, COLOR_DARK_GREY);
     }
@@ -869,6 +880,38 @@ void core1_entry() {
     }
 }
 
+// --- Battery Reading (RP2040 ADC, GPIO 29, 2:1 voltage divider) ---
+static uint8_t read_battery_percentage() {
+    static uint32_t last_print = 0;
+    static uint16_t smoothed_raw = 0;
+    static bool first_read = true;
+    
+    uint16_t adc_raw = adc_read();
+    
+    // Exponential moving average: 10% new, 90% previous
+    if (first_read) {
+        smoothed_raw = adc_raw;
+        first_read = false;
+    } else {
+        smoothed_raw = (smoothed_raw * 9 + adc_raw) / 10;
+    }
+    
+    int voltage_mv = smoothed_raw * 0.8 * 2; // 0.8 mV/unit * x2 divider
+    uint8_t batt_pct;
+    if (voltage_mv < 3400) batt_pct = 0;
+    else if (voltage_mv < 3500) batt_pct = 30;
+    else if (voltage_mv < 3700) batt_pct = 60;
+    else if (voltage_mv < 3900) batt_pct = 90;
+    else batt_pct = 100;
+    
+    uint32_t now = to_ms_since_boot(get_absolute_time());
+    if (now - last_print > 10000) { // Log every 10 seconds
+        printf("[BATT] raw=%u smoothed=%u voltage=%dmV pct=%u%%\n", adc_raw, smoothed_raw, voltage_mv, batt_pct);
+        last_print = now;
+    }
+    return batt_pct;
+}
+
 // Static state for physical key auto-repeat
 uint32_t key_repeat_timers[KEY_COUNT] = {0};
 bool key_was_held[KEY_COUNT] = {false};
@@ -884,6 +927,19 @@ int main() {
     display.init();
     display.set_brightness(255); // Full backlight brightness (GPIO 23 PWM)
     display.clear(COLOR_BLACK);
+
+    // Initialize ADC for battery voltage reading (GPIO 29 = ADC channel 3)
+    adc_init();
+    adc_gpio_init(29);
+    adc_select_input(3);
+    
+    // Debug: scan all ADC pins to find battery
+    for (int ch = 0; ch < 4; ch++) {
+        adc_select_input(ch);
+        sleep_ms(1);
+        uint16_t val = adc_read();
+        printf("[ADC SCAN] ch%d (GPIO %d) raw=%u\n", ch, 26 + ch, val);
+    }
 
     // Premium Elektron-style Boot Splash Sequence
     draw_bitmap(144, 70, 32, 32, icon_splash_logo_32x32, COLOR_WHITE, COLOR_BLACK);
