@@ -165,8 +165,18 @@ cmake --build . --config Release
 
 ### Flashing Steps
 
+#### Via Bootloader
+
 On successful build, the following compiled artifact is generated in the `build/src/` directory:
 
 - **`generative_midi_sequencer.uf2`**: **Device flash binary**
 
 Connect the Pico in **BOOTSEL mode** (hold the Pico's BOOTSEL button while connecting via USB to PC), and drag & drop the `generative_midi_sequencer.uf2` file onto the virtual drive (`RPI-RP2`) that appears on your PC. It will automatically flash, and the sequencer will boot.
+
+#### Via OpenOCD
+
+If you have a picoprobe you can flash via OpenOCD:
+```
+openocd -f interface/cmsis-dap.cfg  -f target/rp2040.cfg   -c "adapter speed 5000" -c "program src/generative_midi_sequencer.elf verify reset exit"
+```
+
